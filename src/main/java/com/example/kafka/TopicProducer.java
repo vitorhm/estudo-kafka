@@ -11,7 +11,7 @@ public class TopicProducer {
     private KafkaTemplate<String, String> kafkaTemplate;
 
     public void send(String message) {
-        kafkaTemplate.send("myTopic3", message);
+        kafkaTemplate.send("myTopic3", message).thenAccept(t -> System.out.println(t.toString()));
         System.out.println("Mensagem enviada: " + message);
     }
 
