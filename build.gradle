@@ -1,7 +1,11 @@
+import com.github.davidmc24.gradle.plugin.avro.GenerateAvroJavaTask
+
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.1.0'
     id 'io.spring.dependency-management' version '1.1.0'
+    id 'com.github.davidmc24.gradle.plugin.avro-base'  version '1.0.0'
+    id 'idea'
 }
 
 group = 'com.example'
@@ -10,16 +14,43 @@ sourceCompatibility = '17'
 
 repositories {
     mavenCentral()
+    maven { url confluentUrl }
+}
+
+def generatedSourcesDir = file('src/generated/main/java')
+idea {
+    module {
+        sourceDirs += generatedSourcesDir
+        generatedSourceDirs += generatedSourcesDir
+    }
 }
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation group: 'org.apache.avro', name: 'avro', version: '1.10.2'
+    implementation(group: 'io.confluent', name: 'kafka-avro-serializer', version: '7.4.0')
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+def generateAvro = tasks.register("generateAvro", GenerateAvroJavaTask) {
+    source("src/main/resources/avro")
+    outputDir = file("src/generated/main/java")
+    fieldVisibility = "PRIVATE"
+    enableDecimalLogicalType = true
+}
+
+tasks.named("compileJava").configure {
+    source(generateAvro)
+}
+
+clean {
+    delete "${rootDir}/src/generated/main/java"
 }
